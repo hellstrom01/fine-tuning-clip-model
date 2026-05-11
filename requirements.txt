@@ -4,4 +4,4 @@ torchvision
 Pillow
 ipykernel
 matplotlib
-sctikit-learn
+scikit-learn
