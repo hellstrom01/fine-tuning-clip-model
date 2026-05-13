@@ -82,4 +82,32 @@ class RSICDUnlabeledDataset(Dataset):
         view_2 = self.transform(image)
         
         return view_1, view_2
-    
+
+class RSICDClassificationDataset(Dataset):
+    """
+    Dataset for Zero-Shot evaluation.
+    Returns: (image_tensor, target_class_index)
+    """
+    def __init__(self, image_list, img_dir, transform, class_names):
+        self.img_dir = img_dir
+        self.transform = transform
+        self.samples = image_list
+        
+        self.class_to_idx = {cls_name: i for i, cls_name in enumerate(class_names)}
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, idx):
+        item = self.samples[idx]
+        
+        # Load and transform image
+        img_path = os.path.join(self.img_dir, item['filename'])
+        image = Image.open(img_path)
+        image = self.transform(image)
+        
+        # Get the integer label for this class
+        class_str = item['class']
+        label_idx = self.class_to_idx[class_str]
+        
+        return image, label_idx

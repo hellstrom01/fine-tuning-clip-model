@@ -53,20 +53,16 @@ def load_dataset(dataset_path, classes=False, txt_dir="data/txtclasses_rsicd"):
         
 
 
+
 def plot_training_results(history, title=None, save=None):
     """
-    Plots the training and validation metrics for the semi-supervised CLIP project.
-    
-    Args:
-        history (dict): Dictionary containing the loss lists.
-        title (str, optional): Custom title for the plot.
-        save (str, optional): File path/name to save the plot (e.g., 'results.png').
+    Plots training components, generalization, and zero-shot accuracy.
     """
     epochs = range(1, len(history['total_losses']) + 1)
     
-    # Set a nice theme
     plt.style.use('ggplot') 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    # Increased figsize to accommodate the third plot
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(22, 6))
 
     # --- Plot 1: Breakdown of Training Loss Components ---
     ax1.plot(epochs, history['supervised_losses'], 'o-', label='Supervised (Split B)', color='#3498db', linewidth=2)
@@ -78,35 +74,51 @@ def plot_training_results(history, title=None, save=None):
     ax1.set_ylabel('Loss Value', fontsize=12)
     ax1.set_xticks(epochs)
     ax1.legend(frameon=True, facecolor='white')
-    ax1.grid(True, linestyle='--', alpha=0.6)
 
-    # --- Plot 2: Generalization (Total Train vs Val) ---
-    ax2.plot(epochs, history['total_losses'], 'o-', label='Total Training Loss', color='#2ecc71', linewidth=2)
-    ax2.plot(epochs, history['validation_losses'], 'x-', label='Validation Loss (Split B)', color='#e74c3c', linewidth=2)
+    # --- Plot 2: Generalization (Loss) ---
+    ax2.plot(epochs, history['total_losses'], 'o-', label='Train Loss', color='#2ecc71', linewidth=2)
+    ax2.plot(epochs, history['validation_losses'], 'x-', label='Val Loss', color='#e74c3c', linewidth=2)
     
-    ax2.set_title('Model Generalization (Train vs. Val)', fontsize=14, fontweight='bold')
+    ax2.set_title('Loss Generalization', fontsize=14, fontweight='bold')
     ax2.set_xlabel('Epoch', fontsize=12)
     ax2.set_ylabel('Loss Value', fontsize=12)
     ax2.set_xticks(epochs)
     ax2.legend(frameon=True, facecolor='white')
-    ax2.grid(True, linestyle='--', alpha=0.6)
 
-    # Annotate the minimum validation loss
+    # Annotate Best (Minimum) Val Loss
     min_val_loss = min(history['validation_losses'])
     min_val_epoch = epochs[history['validation_losses'].index(min_val_loss)]
     ax2.annotate(f'Best: {min_val_loss:.3f}', 
                  xy=(min_val_epoch, min_val_loss), 
-                 xytext=(min_val_epoch, min_val_loss + 0.2),
+                 xytext=(min_val_epoch, min_val_loss + 0.3),
                  arrowprops=dict(facecolor='black', shrink=0.05, width=1, headwidth=5),
                  horizontalalignment='center')
 
-    suptitle = title if title else 'Semi-Supervised CLIP Fine-Tuning Performance' 
-    plt.suptitle(suptitle, fontsize=18, y=1.02)
+    # --- Plot 3: Downstream Performance (Zero-Shot Accuracy) ---
+    # Multiply by 100 for percentage view
+    accuracies = [acc * 100 for acc in history['epoch_zs_accuracies']]
+    ax3.plot(epochs, accuracies, 'o-', color='#9b59b6', linewidth=3, markersize=8)
+    
+    ax3.set_title('Zero-Shot Accuracy (Split C)', fontsize=14, fontweight='bold')
+    ax3.set_xlabel('Epoch', fontsize=12)
+    ax3.set_ylabel('Top-1 Accuracy (%)', fontsize=12)
+    ax3.set_xticks(epochs)
+    ax3.set_ylim(0, max(accuracies) + 10) # Dynamic scale with some headroom
+
+    # Annotate Best (Maximum) Accuracy
+    max_acc = max(accuracies)
+    max_acc_epoch = epochs[accuracies.index(max_acc)]
+    ax3.annotate(f'Peak: {max_acc:.1f}%', 
+                 xy=(max_acc_epoch, max_acc), 
+                 xytext=(max_acc_epoch, max_acc - 10),
+                 arrowprops=dict(facecolor='black', shrink=0.05, width=1, headwidth=5),
+                 horizontalalignment='center', color='#8e44ad', fontweight='bold')
+
+    suptitle = title if title else 'CLIP Semi-Supervised Fine-Tuning Metrics' 
+    plt.suptitle(suptitle, fontsize=20, y=1.05)
     plt.tight_layout()
 
-    # Save logic
     if save:
-        # bbox_inches='tight' ensures titles aren't cut off in the saved file
         plt.savefig(save, bbox_inches='tight', dpi=300)
         print(f"Plot saved to {save}")
 
