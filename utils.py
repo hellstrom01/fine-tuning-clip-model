@@ -1,4 +1,57 @@
 import matplotlib.pyplot as plt
+import json
+import os
+
+def load_dataset(dataset_path, classes=False, txt_dir="data/txtclasses_rsicd"):
+    """
+    Loads the dataset and optionally appends class labels based on the txtclasses folder.
+    
+    Args:
+        dataset_path (str): Path to the dataset_rsicd.json file.
+        split (str): Which split to return ('train', 'val', or 'test').
+        classes (bool): If True, parses the txt files and appends a 'class' key.
+        txt_dir (str): Path to the folder containing the class .txt files.
+    """
+    # Good practice: use the variable passed into the function
+    with open(dataset_path, "r") as f:
+        data = json.load(f)
+        
+    if classes:
+        # 1. Build a fast lookup dictionary mapping filename -> class_name
+        filename_to_class = {}
+        
+        # Go through every .txt file in the directory
+        for txt_filename in os.listdir(txt_dir):
+            if txt_filename.endswith(".txt"):
+                # The class name is the file name without the last 4 characters (".txt")
+                class_name = txt_filename[:-4] 
+                
+                # Open the text file and read the image names
+                txt_path = os.path.join(txt_dir, txt_filename)
+                with open(txt_path, "r") as f:
+                    # Read lines, strip whitespace/newlines, and ignore empty lines
+                    image_names = [line.strip() for line in f.readlines() if line.strip()]
+                    
+                    # Map each image name to this class
+                    for img_name in image_names:
+                        filename_to_class[img_name] = class_name
+                        
+        # 2. Assign the classes to the JSON data in a single pass
+        for item in data["images"]:
+            img_name = item["filename"]
+            if img_name in filename_to_class:
+                item["class"] = filename_to_class[img_name]
+            else:
+                item["class"] = "Unknown" # Safety fallback
+                
+    # 3. Filter the dataset by the requested split
+    splitA = [i for i in data["images"] if i["split"] == "train"] # (Unlabeled dataset) Not allowed to use sentences
+    splitB = [i for i in data["images"] if i["split"] == "val"]   # (Labeled dataset) Allowed to use sentences
+    splitC = [i for i in data["images"] if i["split"] == "test"]  # Actual tess dataset for evaluating performance
+
+    return splitA, splitB, splitC
+        
+
 
 def plot_training_results(history, title=None, save=None):
     """
