@@ -82,3 +82,4 @@ class RSICDUnlabeledDataset(Dataset):
         view_2 = self.transform(image)
         
         return view_1, view_2
+    
