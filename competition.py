@@ -96,7 +96,7 @@ def run_leaderboard_inference(model_path, data_dir, output_file="predictions.txt
 # --- EXECUTION ---
 if __name__ == "__main__":
     # Update these paths to your actual locations
-    MY_MODEL = "/nobackup/marfr380/models/clip_best_model.pt"
+    MY_MODEL = "/nobackup/marfr380/models/clip_best_model_2.pt"
     LEADERBOARD_IMAGES = "data/Leaderboard_data"
     
     run_leaderboard_inference(MY_MODEL, LEADERBOARD_IMAGES)
