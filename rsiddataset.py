@@ -21,3 +21,93 @@ class RSIDCDataset(Dataset):
         image = self.preprocess(Image.open(image_path))
         tokens = self.tokens[idx]
         return image, tokens
+    
+
+import os
+
+class RSICDLabeledDataset(Dataset):
+    """
+    Takes a list of image dicts, flattens the 5 captions, 
+    and returns (image, text_tokens)
+    """
+    def __init__(self, image_list, img_dir, transform, tokenizer):
+        self.img_dir = img_dir
+        self.transform = transform
+        self.tokenizer = tokenizer
+        
+        # Flatten the captions
+        self.samples = []
+        for item in image_list:
+            for sentence in item['sentences']:
+                self.samples.append({
+                    'filename': item['filename'],
+                    'caption': sentence['raw']
+                })
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, idx):
+        sample = self.samples[idx]
+        img_path = os.path.join(self.img_dir, sample['filename'])
+        
+        image = Image.open(img_path)
+        image = self.transform(image)
+        text_tokens = self.tokenizer([sample['caption']])[0]
+        
+        return image, text_tokens
+
+
+class RSICDUnlabeledDataset(Dataset):
+    """
+    Takes a list of image dicts, applies aggressive SimCLR transform twice,
+    and returns (view_1, view_2)
+    """
+    def __init__(self, image_list, img_dir, transform):
+        self.img_dir = img_dir
+        self.transform = transform
+        self.samples = image_list
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, idx):
+        filename = self.samples[idx]['filename']
+        img_path = os.path.join(self.img_dir, filename)
+        
+        image = Image.open(img_path)
+        
+        # Create the two views for Contrastive Learning
+        view_1 = self.transform(image)
+        view_2 = self.transform(image)
+        
+        return view_1, view_2
+
+class RSICDClassificationDataset(Dataset):
+    """
+    Dataset for Zero-Shot evaluation.
+    Returns: (image_tensor, target_class_index)
+    """
+    def __init__(self, image_list, img_dir, transform, class_names):
+        self.img_dir = img_dir
+        self.transform = transform
+        self.samples = image_list
+        
+        self.class_to_idx = {cls_name: i for i, cls_name in enumerate(class_names)}
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, idx):
+        item = self.samples[idx]
+        
+        # Load and transform image
+        img_path = os.path.join(self.img_dir, item['filename'])
+        image = Image.open(img_path)
+        image = self.transform(image)
+        
+        # Get the integer label for this class
+        class_str = item['class']
+        label_idx = self.class_to_idx[class_str]
+        
+        return image, label_idx
