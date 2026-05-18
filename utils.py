@@ -40,7 +40,7 @@ def load_dataset(dataset_path, classes=False, txt_dir="data/txtclasses_rsicd"):
         for item in data["images"]:
             img_name = item["filename"]
             if img_name in filename_to_class:
-                item["class"] = filename_to_class[img_name]
+                item["class"] = filename_to_class[img_name].lower()
             else:
                 item["class"] = "Unknown" # Safety fallback
                 
