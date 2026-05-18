@@ -1,2 +1,7 @@
 data/
 .DS_Store
+semi-supervised2.ipynb
+rsiddataset.py
+__pycache__/
+utils.py
+.gitignore
